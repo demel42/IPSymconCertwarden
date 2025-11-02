@@ -5,10 +5,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../libs/common.php';
 require_once __DIR__ . '/../libs/local.php';
 
-class ModuleTemplateDevice extends IPSModule
+class Certwarden extends IPSModule
 {
-    use ModuleTemplate\StubsCommonLib;
-    use ModuleTemplateLocalLib;
+    use Certwarden\StubsCommonLib;
+    use CertwardenLocalLib;
 
     public function __construct(string $InstanceID)
     {
@@ -28,14 +28,10 @@ class ModuleTemplateDevice extends IPSModule
 
         $this->RegisterPropertyBoolean('module_disable', false);
 
-        $this->RegisterPropertyBoolean('log_no_parent', true);
-
         $this->RegisterPropertyInteger('update_interval', 60);
 
         $this->RegisterAttributeString('UpdateInfo', json_encode([]));
         $this->RegisterAttributeString('ModuleStats', json_encode([]));
-
-        $this->RegisterAttributeString('external_update_interval', '');
 
         $this->InstallVarProfiles(false);
 
@@ -49,15 +45,8 @@ class ModuleTemplateDevice extends IPSModule
         parent::MessageSink($timestamp, $senderID, $message, $data);
 
         if ($message == IPS_KERNELMESSAGE && $data[0] == KR_READY) {
-            $this->OverwriteUpdateInterval();
+            $this->SetUpdateInterval();
         }
-    }
-
-    private function CheckModulePrerequisites()
-    {
-        $r = [];
-
-        return $r;
     }
 
     private function CheckModuleConfiguration()
@@ -65,18 +54,6 @@ class ModuleTemplateDevice extends IPSModule
         $r = [];
 
         return $r;
-    }
-
-    private function CheckModuleUpdate(array $oldInfo, array $newInfo)
-    {
-        $r = [];
-
-        return $r;
-    }
-
-    private function CompleteModuleUpdate(array $oldInfo, array $newInfo)
-    {
-        return '';
     }
 
     public function ApplyChanges()
@@ -136,15 +113,9 @@ class ModuleTemplateDevice extends IPSModule
         $formElements[] = [
             'type'    => 'NumberSpinner',
             'name'    => 'update_interval',
-            'suffix'  => 'Seconds',
+            'suffix'  => 'Minutes',
             'minimum' => 0,
             'caption' => 'Update interval',
-        ];
-
-        $formElements[] = [
-            'type'    => 'CheckBox',
-            'name'    => 'log_no_parent',
-            'caption' => 'Generate message when the gateway is inactive',
         ];
 
         return $formElements;
@@ -178,17 +149,6 @@ class ModuleTemplateDevice extends IPSModule
             ],
         ];
 
-        $formActions[] = [
-            'type'      => 'ExpansionPanel',
-            'caption'   => 'Test area',
-            'expanded'  => false,
-            'items'     => [
-                [
-                    'type'    => 'TestCenter',
-                ],
-            ]
-        ];
-
         $formActions[] = $this->GetInformationFormAction();
         $formActions[] = $this->GetReferencesFormAction();
 
@@ -198,22 +158,9 @@ class ModuleTemplateDevice extends IPSModule
     private function SetUpdateInterval(int $sec = null)
     {
         if (is_null($sec)) {
-            $sec = $this->ReadAttributeString('external_update_interval');
-            if ($sec == '') {
-                $sec = $this->ReadPropertyInteger('update_interval');
-            }
+            $min = $this->ReadAttributeString('external_update_interval');
         }
-        $this->MaintainTimer('UpdateStatus', $sec * 1000);
-    }
-
-    public function OverwriteUpdateInterval(int $sec = null)
-    {
-        if (is_null($sec)) {
-            $this->WriteAttributeString('external_update_interval', '');
-        } else {
-            $this->WriteAttributeString('external_update_interval', $sec);
-        }
-        $this->SetUpdateInterval($sec);
+        $this->MaintainTimer('UpdateStatus', $min * 60 * 1000);
     }
 
     private function UpdateStatus()
@@ -222,17 +169,6 @@ class ModuleTemplateDevice extends IPSModule
             $this->SendDebug(__FUNCTION__, $this->GetStatusText() . ' => skip', 0);
             return;
         }
-
-        /*
-        if ($this->HasActiveParent() == false) {
-            $this->SendDebug(__FUNCTION__, 'has no active parent/gateway', 0);
-            $log_no_parent = $this->ReadPropertyBoolean('log_no_parent');
-            if ($log_no_parent) {
-                $this->LogMessage($this->Translate('Instance has no active gateway'), KL_WARNING);
-            }
-            return;
-        }
-         */
 
         $this->SendDebug(__FUNCTION__, $this->PrintTimer('UpdateStatus'), 0);
     }

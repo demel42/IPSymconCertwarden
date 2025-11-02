@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-trait ModuleTemplateLocalLib
+trait CertwardenLocalLib
 {
     private function GetFormStatus()
     {

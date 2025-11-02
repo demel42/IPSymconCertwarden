@@ -1,10 +1,10 @@
 {
-	"id": "{0DCE4B6F-9176-DC9A-5502-1AF2B7573EB5}",
-	"name": "ModuleTemplate",
+	"id": "{6A72438D-330C-4996-CCE2-E75BC9FFE8DA}",
+	"name": "Certwarden",
 	"author": "Ch. Damsky",
-	"url": "https://github.com/demel42/ModuleTenmplate.git",
+	"url": "https://github.com/demel42/IPSymconCertwarden.git",
 	"compatibility": {
-		"version": "6.0"
+		"version": "7.0"
 	},
 	"version": "0.9",
 	"build": 0,

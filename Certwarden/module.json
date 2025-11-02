@@ -1,0 +1,12 @@
+{
+	"id": "{B54A8E65-922F-86DF-62F1-396B63B44F43}",
+	"name": "Certwarden",
+	"type": 3,
+	"vendor": "",
+	"aliases": [],
+	"parentRequirements": [],
+	"childRequirements": [],
+	"implemented": [],
+	"prefix": "Certwarden",
+	"url": "https://github.com/demel42/IPSymconCertwarden/blob/main/README.md"
+}

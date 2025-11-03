@@ -380,9 +380,9 @@ class Certwarden extends IPSModule
             IPS_SetProperty($webserver_instID, 'Certificate', $certificate_b64);
             IPS_SetProperty($webserver_instID, 'PrivateKey', $privateKey_b64);
             IPS_ApplyChanges($webserver_instID);
-            $changed = true;
+            $certificateChanged = true;
         } else {
-            $changed = true;
+            $certificateChanged = false;
         }
 
         $inst = IPS_GetInstance($webserver_instID);
@@ -396,11 +396,11 @@ class Certwarden extends IPSModule
             $params = [
                 'webServer_instID'     => $webserver_instID,
                 'webServer_status'     => $webserver_status,
-                'webServer_statusText' => statusText,
+                'webServer_statusText' => $statusText,
                 'instanceID'           => $this->InstanceID,
                 'validFrom'            => $validFrom_time_t,
                 'validTo'              => $validTo_time_t,
-                'changed'              => $changed,
+                'certificateChanged'   => $certificateChanged,
             ];
             @$r = IPS_RunScriptTextWaitEx($script, $params);
             $this->SendDebug(__FUNCTION__, 'script("...", ' . print_r($params, true) . ' => ' . $r, 0);

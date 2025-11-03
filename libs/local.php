@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 trait CertwardenLocalLib
 {
+    public static $IS_FORBIDDEN = IS_EBASE + 10;
+    public static $IS_SERVERERROR = IS_EBASE + 11;
+    public static $IS_HTTPERROR = IS_EBASE + 12;
+
     private function GetFormStatus()
     {
         $formStatus = $this->GetCommonFormStatus();
+
+        $formStatus[] = ['code' => self::$IS_FORBIDDEN, 'icon' => 'error', 'caption' => 'Instance is inactive (access forbidden)'];
+        $formStatus[] = ['code' => self::$IS_SERVERERROR, 'icon' => 'error', 'caption' => 'Instance is inactive (server error)'];
+        $formStatus[] = ['code' => self::$IS_HTTPERROR, 'icon' => 'error', 'caption' => 'Instance is inactive (http error)'];
 
         return $formStatus;
     }
@@ -21,6 +29,10 @@ trait CertwardenLocalLib
             case IS_ACTIVE:
                 $class = self::$STATUS_VALID;
                 break;
+            case self::$IS_SERVERERROR:
+            case self::$IS_HTTPERROR:
+                $class = self::$STATUS_RETRYABLE;
+                break;
             default:
                 $class = self::$STATUS_INVALID;
                 break;
@@ -34,5 +46,15 @@ trait CertwardenLocalLib
         if ($reInstall) {
             $this->SendDebug(__FUNCTION__, 'reInstall=' . $this->bool2str($reInstall), 0);
         }
+
+        $associations = [
+            ['Wert' => IS_CREATING, 'Name' => $this->Translate('creating'), 'Farbe' => -1],
+            ['Wert' => IS_ACTIVE, 'Name' => $this->Translate('active'), 'Farbe' => -1],
+            ['Wert' => IS_DELETING, 'Name' => $this->Translate('deleting'), 'Farbe' => -1],
+            ['Wert' => IS_INACTIVE, 'Name' => $this->Translate('inactive'), 'Farbe' => -1],
+            ['Wert' => IS_NOTCREATED, 'Name' => $this->Translate('not created'), 'Farbe' => -1],
+            ['Wert' => 201, 'Name' => $this->Translate('restart required'), 'Farbe' => -1],
+        ];
+        $this->CreateVarProfile('Certwarden.WebserverStatus', VARIABLETYPE_INTEGER, '', 0, 0, 0, 1, '', $associations, $reInstall);
     }
 }

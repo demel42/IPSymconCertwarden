@@ -3,7 +3,7 @@
 	"name": "Certwarden",
 	"type": 3,
 	"vendor": "",
-	"aliases": [],
+	"aliases": [ "Cert Warden" ],
 	"parentRequirements": [],
 	"childRequirements": [],
 	"implemented": [],

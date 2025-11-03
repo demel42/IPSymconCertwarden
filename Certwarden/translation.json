@@ -1,18 +1,40 @@
 {
 	"translations": {
 		"de": {
-			"Certwarden": "Certwarden",
+			"Cert Warden": "Cert Warden",
+
+			"__CheckModuleConfiguration__": "",
+			"Server must be specified": "Server muss angegeben werden",
+			"Certificate name must be specified": "Zertifikatsname muss angegeben werden",
+			"Certificate API key must be specified": "Zertifikat-API-Schlüssel muss angegeben werden",
+			"Private key name must be specified": "Name des privaten Schlüssels muss angegeben werden",
+			"Private key API key must be specified": "API-Schlüssel des privaten Schlüssels muss angegeben werden",
+			"Webserver instance must be specified": "Webserver-Instanz muss angegeben werden",
 
 			"__properties__": "",
 			"Disable instance": "Instanz deaktivieren",
+
+			"Certwarden server": "Certwarden-Server",
+			"Server": "Server",
+			"Port": "Port",
+			"Certificate": "Zertifikat",
+			"Private key": "Privater Schlüssel",
+			"Name": "Name",
+			"API key": "API-Schlüssel",
+			"Webserver instance": "Webserver-Instanz",
+			"Script": "Skript",
+			"Script is called after execution. For more information, see documentation":
+				"Das Skript wird nach der Ausführung aufgerufen. Weitere Informationen finden Sie in der Dokumentation",
 
 			"Update interval": "Aktualisierungsintervall",
 			"Minutes": "Minuten",
 
 			"__actions__": "",
-			"Update status": "Aktualisiere Status",
+			"Update": "Aktualisieren",
 
-			"__messages__": "",
+			"__variables__": "",
+			"Certificate valid until": "Zertifikat gültig bis",
+			"Webserver status": "Webserver-Status",
 
 			"__end__": ""
 		}

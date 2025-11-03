@@ -1,6 +1,19 @@
 {
 	"translations": {
 		"de": {
+			"__variablenprofile__": "Certwarden.WebserverStatus",
+			"creating": "wird erzeugt",
+			"active": "ist aktiv",
+			"deleting": "wird gelöscht",
+			"inactive": "ist inaktiv",
+			"not created": "nicht erzeugt",
+			"restart required": "Neustart erforderlich",
+
+			"__status__": "",
+			"Instance is inactive (access forbidden)": "Instanz ist inaktiv (Zugriff verboten)",
+			"Instance is inactive (server error)": "Instanz ist inaktiv (Serverfehler)",
+			"Instance is inactive (http error)": "Instanz ist inaktiv (HTTP-Fehler)",
+
 			"__end__": ""
 		}
 	}

@@ -41,7 +41,7 @@ class Certwarden extends IPSModule
 
         $this->RegisterPropertyString('script', '');
 
-        $this->RegisterPropertyInteger('update_interval', 60);
+        $this->RegisterPropertyString('update_time', '{"hour":0,"minute":0,"second":0}');
 
         $this->RegisterAttributeString('UpdateInfo', json_encode([]));
         $this->RegisterAttributeString('ModuleStats', json_encode([]));
@@ -60,7 +60,8 @@ class Certwarden extends IPSModule
         if ($message == IPS_KERNELMESSAGE && $data[0] == KR_READY) {
             $module_disable = $this->ReadPropertyBoolean('module_disable');
             if ($module_disable == false) {
-                $this->MaintainTimer('UpdateCertificate', 5 * 1000);
+                $this->UpdateWebServerStatus();
+                $this->SetUpdateTimer();
             }
         }
 
@@ -111,6 +112,22 @@ class Certwarden extends IPSModule
         }
 
         return $r;
+    }
+
+    private function SetUpdateTimer()
+    {
+        $update_time = json_decode($this->ReadPropertyString('update_time'), true);
+
+        $dt = new DateTime(date('d.m.Y 00:00:00', time()));
+        $now_date = (int) $dt->format('U');
+        $next_tstamp = $now_date + $update_time['hour'] * 3600 + $update_time['minute'] * 60 + $update_time['second'];
+        // nächster check immer in der zukunft
+        if ($next_tstamp <= time()) {
+            $next_tstamp += 86400;
+        }
+        $sec = $next_tstamp ? $next_tstamp - time() : 0;
+
+        $this->MaintainTimer('UpdateCertificate', $sec * 1000);
     }
 
     public function ApplyChanges()
@@ -167,7 +184,8 @@ class Certwarden extends IPSModule
         }
 
         if (IPS_GetKernelRunlevel() == KR_READY) {
-            $this->MaintainTimer('UpdateCertificate', 5 * 1000);
+            $this->UpdateWebServerStatus();
+            $this->SetUpdateTimer();
         }
     }
 
@@ -272,11 +290,9 @@ class Certwarden extends IPSModule
         ];
 
         $formElements[] = [
-            'type'    => 'NumberSpinner',
-            'name'    => 'update_interval',
-            'suffix'  => 'Minutes',
-            'minimum' => 0,
-            'caption' => 'Update interval',
+            'name'    => 'update_time',
+            'type'    => 'SelectTime',
+            'caption' => 'Time for updating the certificate',
         ];
 
         return $formElements;
@@ -291,6 +307,7 @@ class Certwarden extends IPSModule
 
             $formActions[] = $this->GetInformationFormAction();
             $formActions[] = $this->GetReferencesFormAction();
+            $formActions[] = $this->GetModuleActivityFormAction();
 
             return $formActions;
         }
@@ -312,16 +329,18 @@ class Certwarden extends IPSModule
 
         $formActions[] = $this->GetInformationFormAction();
         $formActions[] = $this->GetReferencesFormAction();
+        $formActions[] = $this->GetModuleActivityFormAction();
 
         return $formActions;
     }
 
-    private function SetUpdateInterval(int $min = null)
+    private function UpdateWebServerStatus()
     {
-        if (is_null($min)) {
-            $min = $this->ReadPropertyInteger('update_interval');
-        }
-        $this->MaintainTimer('UpdateCertificate', $min * 60 * 1000);
+        $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
+
+        $inst = IPS_GetInstance($webserver_instID);
+        $webserver_status = $inst['InstanceStatus'];
+        $this->SetValue('WebServerStatus', $webserver_status);
     }
 
     private function UpdateCertificate()
@@ -333,10 +352,12 @@ class Certwarden extends IPSModule
 
         $certificate = $this->download_certificate();
         if ($certificate === false) {
+            $this->AddModuleActivity('unable to download certificate', 0);
             return;
         }
         $privateKey = $this->download_privatekey();
         if ($privateKey === false) {
+            $this->AddModuleActivity('unable to download private key', 0);
             return;
         }
 
@@ -346,30 +367,38 @@ class Certwarden extends IPSModule
         $check = openssl_x509_check_private_key($certificate, $privateKey);
         if ($check == false) {
             $this->SendDebug(__FUNCTION__, 'certificate and private key don\'t match', 0);
+            $this->AddModuleActivity('certificate and private key don\'t match', 0);
             return;
         }
 
         $validFrom_time_t = $cert_parsed['validFrom_time_t'];
         $validTo_time_t = $cert_parsed['validTo_time_t'];
-        $this->SendDebug(__FUNCTION__, 'certificate is valid from ' . date('d.m.Y H:i', $validFrom_time_t) . ' ... until ' . date('d.m.Y H:i', $validTo_time_t), 0);
+        $validFrom_time_s = date('d.m.Y H:i', $validFrom_time_t);
+        $validTo_time_s = date('d.m.Y H:i', $validTo_time_t);
+
+        $this->SendDebug(__FUNCTION__, 'certificate is valid from ' . $validFrom_time_s . ' ... until ' . $validTo_time_s, 0);
 
         $now = time();
         if ($validFrom_time_t > $now) {
             $this->SendDebug(__FUNCTION__, 'certificate is not yet valid', 0);
+            $this->AddModuleActivity('certificate is not yet valid (< ' . $validFrom_time_s . ')', 0);
             return;
         }
 
         if ($validTo_time_t < $now) {
             $this->SendDebug(__FUNCTION__, 'certificate is not longer valid', 0);
+            $this->AddModuleActivity('certificate is not longer valid (> ' . $validTo_time_s . ')', 0);
             return;
         }
 
         $this->SetValue('ValidUntil', $validTo_time_t);
 
-        $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
+        $this->UpdateWebServerStatus();
 
         $certificate_b64 = base64_encode($certificate);
         $privateKey_b64 = base64_encode($privateKey);
+
+        $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
 
         if (IPS_InstanceExists($webserver_instID) == false) {
             $this->SendDebug(__FUNCTION__, 'webserver instance is not given/valid', 0);
@@ -381,22 +410,18 @@ class Certwarden extends IPSModule
             IPS_SetProperty($webserver_instID, 'PrivateKey', $privateKey_b64);
             IPS_ApplyChanges($webserver_instID);
             $certificateChanged = true;
+            $this->AddModuleActivity('certificate updated, valid until ' . $validTo_time_s, 0);
         } else {
             $certificateChanged = false;
+            $this->AddModuleActivity('certificate is unchanged', 0);
         }
-
-        $inst = IPS_GetInstance($webserver_instID);
-        $webserver_status = $inst['InstanceStatus'];
-        $this->SetValue('WebServerStatus', $webserver_status);
-        $statusText = $this->GetValueFormatted('WebServerStatus');
-        $this->SendDebug(__FUNCTION__, 'webserver status=' . $webserver_status . ' (' . $statusText . ')', 0);
 
         $script = $this->ReadPropertyString('script');
         if ($script != '') {
             $params = [
                 'webServer_instID'     => $webserver_instID,
-                'webServer_status'     => $webserver_status,
-                'webServer_statusText' => $statusText,
+                'webServer_status'     => $this->GetValue('WebServerStatus'),
+                'webServer_statusText' => $this->GetValueFormatted('WebServerStatus'),
                 'instanceID'           => $this->InstanceID,
                 'validFrom'            => $validFrom_time_t,
                 'validTo'              => $validTo_time_t,
@@ -406,7 +431,7 @@ class Certwarden extends IPSModule
             $this->SendDebug(__FUNCTION__, 'script("...", ' . print_r($params, true) . ' => ' . $r, 0);
         }
 
-        $this->SetUpdateInterval();
+        $this->SetUpdateTimer();
     }
 
     private function LocalRequestAction($ident, $value)

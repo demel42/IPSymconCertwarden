@@ -25,9 +25,7 @@
 			"Script": "Skript",
 			"Script is called after execution. For more information, see documentation":
 				"Das Skript wird nach der Ausführung aufgerufen. Weitere Informationen finden Sie in der Dokumentation",
-
-			"Update interval": "Aktualisierungsintervall",
-			"Minutes": "Minuten",
+			"Time for updating the certificate": "Uhrzeit für die Aktualisierung des Zertifikats",
 
 			"__actions__": "",
 			"Update": "Aktualisieren",

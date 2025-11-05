@@ -16,9 +16,22 @@
 
 ## 1. Funktionsumfang
 
+[CertWarden](https://www.certwarden.com) ist Server, das ein ACME-basiertes Zertifikathandling mit einem Benutzerinterface verbindet. Der Server läuft vorzugsweise in einem Docker-Container.
+Mittels ACME-DNS kann ein gültiges Zereifikat von LetsEncrypt geholt werden ohne das ein HTTP-Zugriff erforderloch ist. Die GUI von Vertwarden ist recht verständlich, eine gewisse Vorstellung von Zertifikaten sollte vorhanden sein, aber nicht von LetsEncrypt, ACME o.ä.. Wildcard-Zertifikate (_*.\<meine Domain>_)
+Zertifikate werden automatisch frühzeitig erneuert (wohl 1/3 der Laufzeit vor Ablauf der Gültigkeit)
+
+Die von Certwaren erstellten Zertifikate können von anderen Server auch mittels einer einfachen HTTP-API geholt und integriert werden; Beispiel-Scripte sind für einige Systeme vorhanden.
+
+Das Modul holt ein Zertifikat von dem lokalen CertWarden-Server und für das in einem ausgewählten Symcon-Webserver ein. Der Neustart des Symcon muss manuell erfolgen.
+Da aber die Erneuerung der Zertifikate im Certwarden frühzeitig erfolgt passiert das sowieso oder kann gut eingeplant werden.
+
+Nachdem ein Zertifikat erneuert wurde, eird ein ScriptAaufgerufen, in der eine Benachrichtigung erfolgen kann.
+
+
 ## 2. Voraussetzungen
 
 - IP-Symcon ab Version 6.0
+- ein CertWarden-Server mit eine einstrechenden Zertifikat
 
 ## 3. Installation
 
@@ -43,19 +56,56 @@ alle Funktionen sind über _RequestAction_ der jew. Variablen ansteuerbar
 | :------------------------ | :------  | :----------- | :----------- |
 | Instanz deaktivieren      | boolean  | false        | Instanz temporär deaktivieren |
 |                           |          |              | |
+| Server                    | string   |              | Hostname/IP des Certwarden-Servers |
+| Port                      | integer  | 4055         | Portnummer von Certwarden |
+|                           |          |              | |
+| Zertifikat                |          |              | |
+| - Name                    | string   |              | Name des Zertifikats im Certwarden |
+| - API-Key                 | string   |              | API-Key des Zertifikats |
+| Privater Schlüssel        |          |              | |
+| - Name                    | string   |              | Name des privaten Schlüssels des Zertifikats im Certwarden |
+| - API-Key                 | string   |              | API-Key des privaten Schlüssels des Zertifikat |
+|                           |          |              | |
+| Webserver-Instanz         | integer  |              | ID des betroffenen Webservers |
+| Skript                    | string   |              | Skript, das nach jedem Durchlauf ausgeführt wird \[_1_\]|
+| Uhrzeit                   |          | 00:00:00     | Uhrzeit der Aktualisierung |
 
-#### Aktionen
+\[_1_\]:<br>
 
-| Bezeichnung                | Beschreibung |
-| :------------------------- | :----------- |
+
+Dem Script werden zusätzliche Variablen in der üblichen Struktur *_IPS* übergeben.
+
+
+| Variable                  | Typ      | Beschreibung |
+| :------------------------ | :------  | :----------- |
+| webServer_instID          | integer  | Instanz-ID des betroffenen Webservers |
+| webServer_status          | integer  | Status des betroffenen Webservers |
+| webServer_statusText      | string   | Status des betroffenen Webservers als Text |
+| instanceID                | integer  | Instanz-ID der Certwarden-Instanz |
+| validFrom                 | integer  | Zertifikat-Gültigkeit ab |
+| validTo                   | integer  | Zertifikat-Gültigkeit bis |
+| certificateChanged        | boolean  | Zertifikat wurde geändert, sonѕt ist das nur ein Durchlauf ohne Änderung |
+
+
+
+| Bezeichnung               | Beschreibung |
+| :------------------------ | :----------- |
+| Aktualisieren             | Zertifikat holen und ggfs. aktualisieren |
+
+#### Væriablen
+
+| Bezeichnung               | Beschreibung |
+| :------------------------ | :----------- |
+| Zertifikat gültig bis     | Ende der Gültigkeit des Zertifikats |
+| Webserver-Status          | Instanz-Status des Weⅺservers. Hieran kann man gut erkennen, ob der Webserver einen Neustart erfordert (Wert *201*) |
+
 
 ### Variablenprofile
 
 Es werden folgende Variablenprofile angelegt:
-* Boolean<br>
 * Integer<br>
-* Float<br>
-* String<br>
+Certwarden.WebserverStatus
+
 
 ## 6. Anhang
 
@@ -69,5 +119,5 @@ Es werden folgende Variablenprofile angelegt:
 
 ## 7. Versions-Historie
 
-- 1.0 @ 04.11.2025 11:50
+- 1.0 @ 05.11.2025 17:34
   - Initiale Version

@@ -225,17 +225,28 @@ class Certwarden extends IPSModule
             'caption' => 'Certificate',
             'items'   => [
                 [
+                    'type'    => 'Label',
+                    'caption' => 'Certificate',
+                ],
+                [
                     'type'    => 'RowLayout',
                     'items'   => [
                         [
                             'type'    => 'Label',
-                            'caption' => 'Certificate',
                         ],
                         [
                             'type'    => 'ValidationTextBox',
                             'name'    => 'cert_name',
                             'caption' => 'Name',
                             'width'   => '200px',
+                        ],
+                    ],
+                ],
+                [
+                    'type'    => 'RowLayout',
+                    'items'   => [
+                        [
+                            'type'    => 'Label',
                         ],
                         [
                             'type'    => 'ValidationTextBox',
@@ -246,17 +257,28 @@ class Certwarden extends IPSModule
                     ],
                 ],
                 [
+                    'type'    => 'Label',
+                    'caption' => 'Private key',
+                ],
+                [
                     'type'    => 'RowLayout',
                     'items'   => [
                         [
                             'type'    => 'Label',
-                            'caption' => 'Private key',
                         ],
                         [
                             'type'    => 'ValidationTextBox',
                             'name'    => 'key_name',
                             'caption' => 'Name',
                             'width'   => '200px',
+                        ],
+                    ],
+                ],
+                [
+                    'type'    => 'RowLayout',
+                    'items'   => [
+                        [
+                            'type'    => 'Label',
                         ],
                         [
                             'type'    => 'ValidationTextBox',

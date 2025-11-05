@@ -38,13 +38,13 @@ Nachdem ein Zertifikat erneuert wurde, eird ein ScriptAaufgerufen, in der eine B
 ### a. Installation des Moduls
 
 Im [Module Store](https://www.symcon.de/service/dokumentation/komponenten/verwaltungskonsole/module-store/) ist das Modul unter dem Suchbegriff *Certwarden* zu finden.<br>
-Alternativ kann das Modul über [Module Control](https://www.symcon.de/service/dokumentation/modulreferenz/module-control/) unter Angabe der URL `https://github.com/demel42/Certwarden.git` installiert werden.
+Alternativ kann das Modul über [Module Control](https://www.symcon.de/service/dokumentation/modulreferenz/module-control/) unter Angabe der URL `https://github.com/demel42/IPSymconCertwarden.git` installiert werden.
 
 ### b. Einrichtung in IPS
 
 ## 4. Funktionsreferenz
 
-alle Funktionen sind über _RequestAction_ der jew. Variablen ansteuerbar
+es gibt keine Funktionen
 
 ## 5. Konfiguration
 

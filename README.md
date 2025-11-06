@@ -119,5 +119,5 @@ Certwarden.WebserverStatus
 
 ## 7. Versions-Historie
 
-- 1.0 @ 05.11.2025 17:34
+- 1.0 @ 06.11.2025 07:45
   - Initiale Version

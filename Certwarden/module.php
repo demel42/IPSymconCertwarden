@@ -359,10 +359,14 @@ class Certwarden extends IPSModule
     private function UpdateWebServerStatus()
     {
         $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
-
-        $inst = IPS_GetInstance($webserver_instID);
-        $webserver_status = $inst['InstanceStatus'];
-        $this->SetValue('WebServerStatus', $webserver_status);
+        if (IPS_InstanceExists($webserver_instID)) {
+            $inst = IPS_GetInstance($webserver_instID);
+            $st = $inst['InstanceStatus'];
+        } else {
+            $this->SendDebug(__FUNCTION__, 'webserver instance is not given/valid', 0);
+            $st = IS_NOTCREATED;
+        }
+        $this->SetValue('WebServerStatus', $st);
     }
 
     private function UpdateCertificate()
@@ -421,7 +425,6 @@ class Certwarden extends IPSModule
         $privateKey_b64 = base64_encode($privateKey);
 
         $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
-
         if (IPS_InstanceExists($webserver_instID) == false) {
             $this->SendDebug(__FUNCTION__, 'webserver instance is not given/valid', 0);
             return;

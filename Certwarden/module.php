@@ -118,9 +118,7 @@ class Certwarden extends IPSModule
     {
         $update_time = json_decode($this->ReadPropertyString('update_time'), true);
 
-        $dt = new DateTime(date('d.m.Y 00:00:00', time()));
-        $now_date = (int) $dt->format('U');
-        $next_tstamp = $now_date + $update_time['hour'] * 3600 + $update_time['minute'] * 60 + $update_time['second'];
+        $next_tstamp = strtotime(date('d.m.Y 00:00:00', time())) + $update_time['hour'] * 3600 + $update_time['minute'] * 60 + $update_time['second'];
         // nächster check immer in der zukunft
         if ($next_tstamp <= time()) {
             $next_tstamp += 86400;
@@ -551,7 +549,7 @@ class Certwarden extends IPSModule
                 $err = 'got http-code ' . $httpcode . ' (server error)';
             } else {
                 $statuscode = self::$IS_HTTPERROR;
-                $err = "got http-code $httpcode";
+                $err = 'got http-code ' . $httpcode . ' (' . $this->HttpCode2Text($httpcode) . ')';
             }
         }
 

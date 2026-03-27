@@ -119,5 +119,11 @@ Certwarden.WebserverStatus
 
 ## 7. Versions-Historie
 
+- 1.1 @ 27.03.2026 09:12
+  - Fix: Berechnung dew nächsten Status-Aktualisierung war unter Umständen fehlerhaft
+  - Änderung: Anpassung an IPS 9
+  - interne Änderungen
+  - update submodule CommonStubs
+
 - 1.0 @ 06.11.2025 07:45
   - Initiale Version

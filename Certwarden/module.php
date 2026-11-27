@@ -379,6 +379,38 @@ class Certwarden extends IPSModule
             $this->AddModuleActivity('unable to download certificate', 0);
             return;
         }
+
+        // Cert Warden returns the server certificate followed by its issuers in one PEM.
+        $certificates = preg_split('/(?=-----BEGIN CERTIFICATE-----)/', trim($certificate), -1, PREG_SPLIT_NO_EMPTY);
+        if (!$certificates) {
+            $this->AddModuleActivity('certificate download contained no PEM certificates', 0);
+            return;
+        }
+        $previous = null;
+        foreach ($certificates as $index => $pem) {
+            $pem = trim($pem) . "\n";
+            if (!preg_match('/\A-----BEGIN CERTIFICATE-----\s+[A-Za-z0-9+\/=\s]+-----END CERTIFICATE-----\s*\z/', $pem)) {
+                $this->AddModuleActivity('certificate download contained invalid PEM data', 0);
+                return;
+            }
+            $parsed = @openssl_x509_read($pem);
+            if ($parsed === false) {
+                $this->AddModuleActivity('certificate download contained an invalid certificate', 0);
+                return;
+            }
+            if ($previous !== null) {
+                $issuerKey = openssl_pkey_get_public($parsed);
+                if ($issuerKey === false || openssl_x509_verify($previous, $issuerKey) !== 1) {
+                    $this->AddModuleActivity('downloaded issuer does not sign the preceding certificate', 0);
+                    return;
+                }
+            }
+            $previous = $parsed;
+            $certificates[$index] = $pem;
+        }
+        $certificate = array_shift($certificates);
+        $certificateAuthority = implode('', $certificates);
+
         $privateKey = $this->download_privatekey();
         if ($privateKey === false) {
             $this->AddModuleActivity('unable to download private key', 0);
@@ -386,6 +418,10 @@ class Certwarden extends IPSModule
         }
 
         $cert_parsed = openssl_x509_parse($certificate, false);
+        if ($cert_parsed === false) {
+            $this->AddModuleActivity('unable to parse server certificate', 0);
+            return;
+        }
         $this->SendDebug(__FUNCTION__, 'certificate=' . print_r($cert_parsed, true), 0);
 
         $check = openssl_x509_check_private_key($certificate, $privateKey);
@@ -419,23 +455,48 @@ class Certwarden extends IPSModule
 
         $this->UpdateWebServerStatus();
 
-        $certificate_b64 = base64_encode($certificate);
-        $privateKey_b64 = base64_encode($privateKey);
-
         $webserver_instID = $this->ReadPropertyInteger('webserver_instID');
         if (IPS_InstanceExists($webserver_instID) == false) {
             $this->SendDebug(__FUNCTION__, 'webserver instance is not given/valid', 0);
             return;
         }
 
-        if (IPS_GetProperty($webserver_instID, 'Certificate') != $certificate_b64 || IPS_GetProperty($webserver_instID, 'PrivateKey') != $privateKey_b64) {
-            IPS_SetProperty($webserver_instID, 'Certificate', $certificate_b64);
-            IPS_SetProperty($webserver_instID, 'PrivateKey', $privateKey_b64);
-            IPS_ApplyChanges($webserver_instID);
-            $certificateChanged = true;
+        $settings = [
+            'Certificate'          => base64_encode($certificate),
+            'CertificateAuthority' => base64_encode($certificateAuthority),
+            'PrivateKey'           => base64_encode($privateKey),
+        ];
+        $originalConfig = IPS_GetConfiguration($webserver_instID);
+        $config = is_string($originalConfig) ? json_decode($originalConfig) : null;
+        if (!is_object($config)) {
+            $this->AddModuleActivity('unable to read webserver configuration', 0);
+            return;
+        }
+        $certificateChanged = false;
+        foreach ($settings as $property => $value) {
+            if (($config->$property ?? null) !== $value) {
+                $certificateChanged = true;
+                $config->$property = $value;
+            }
+        }
+
+        if ($certificateChanged) {
+            if (IPS_HasChanges($webserver_instID) || IPS_GetConfiguration($webserver_instID) !== $originalConfig) {
+                $this->AddModuleActivity('webserver has pending configuration changes, certificate update skipped', 0);
+                return;
+            }
+            $updatedConfig = json_encode($config);
+            if ($updatedConfig === false || !IPS_SetConfiguration($webserver_instID, $updatedConfig)) {
+                $this->AddModuleActivity('unable to stage updated certificate for webserver', 0);
+                return;
+            }
+            if (!IPS_ApplyChanges($webserver_instID)) {
+                IPS_ResetChanges($webserver_instID);
+                $this->AddModuleActivity('unable to apply updated certificate to webserver', 0);
+                return;
+            }
             $this->AddModuleActivity('certificate updated, valid until ' . $validTo_time_s, 0);
         } else {
-            $certificateChanged = false;
             $this->AddModuleActivity('certificate is unchanged', 0);
         }
 
